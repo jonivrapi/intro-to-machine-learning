@@ -19,11 +19,15 @@ class MLPipelineSetup:
             "machine": None
         }
     
-    def loadData(path):
-        return pd.read_table(path, sep=',', header=None)
+    def loadData(self, index):
+        return pd.read_table(self.datasetPaths[index], sep=',', header=None)
     
+
+    def populateDataframes(self):
+        for index, key in enumerate(self.dataframes):
+            self.dataframes[key] = self.loadData(index)
+
+
     # def handleMissingValues():
 
-
-for path in datasetPaths:
-    print(loadData(path))
+MLPipelineSetup().populateDataframes()
