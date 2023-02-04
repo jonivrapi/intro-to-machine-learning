@@ -102,7 +102,7 @@ metadata: dict[str, dict] = {
         "path": "datasets/machine/machine.data",
         "columns": [ColumnTypes.NONE, ColumnTypes.NONE, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL],
         "dataframe": None,
-        "columnNames": []
+        "columnNames": ["vendor name", "Model Name", "MYCT", "MMIN", "MMAX", "CACH", "CHMIN", "CHMAX", "PRP", "ERP"]
     }
 }
     
@@ -113,7 +113,8 @@ def loadData(metadata):
     return df
 
 def handleMissingValues(dataframe: pd.DataFrame):
-    return dataframe.replace('?', float("nan"))
+    dataframe.replace('?', float("nan"), inplace=True)
+    return dataframe.fillna(dataframe.mean(numeric_only=True))
 
 def encodeOrdinalFeatures(metadata):
     if "ordinal" in metadata:
@@ -134,7 +135,16 @@ def encodeNominalFeatures(metadata):
             metadata["dataframe"] = metadata["dataframe"].join(oneHotEncoding, rsuffix=f"_{colName}")
     
     return metadata["dataframe"]
-            
+
+def discretization(metadata, equalwidth=True, numBins=4):
+    if equalwidth:
+        for index, item in enumerate(metadata["columns"]):
+            colName = metadata["columnNames"][index]
+            if item == ColumnTypes.REAL:
+                print(f'df: {metadata["dataframe"][colName]}')
+                metadata["dataframe"][f"{colName}_discretized"] = pd.cut(metadata["dataframe"][colName], numBins)
+    
+    return metadata["dataframe"]
         
 
 # def oneHotEncode():
