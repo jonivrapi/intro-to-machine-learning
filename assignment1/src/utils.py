@@ -1,7 +1,7 @@
 import pandas as pd
-class MLPipelineSetup:
+class MLPipelineBuilder:
     def __init__(self) -> None:
-        self.datasetPaths = [
+        self.datasetPaths: list[str] = [
             "../../datasets/abalone/abalone.data",
             "../../datasets/breast-cancer/breast-cancer.data",
             "../../datasets/car/car.data",
@@ -10,7 +10,7 @@ class MLPipelineSetup:
             "../../datasets/machine/machine.data"
         ]
 
-        self.dataframes = {
+        self.dataframes: dict[str, pd.DataFrame] = {
             "abalone": None,
             "breast-cancer": None,
             "car": None,
@@ -26,8 +26,21 @@ class MLPipelineSetup:
     def populateDataframes(self):
         for index, key in enumerate(self.dataframes):
             self.dataframes[key] = self.loadData(index)
+        
+        return self
 
 
-    # def handleMissingValues():
+    def handleMissingValues(self):
+        for key in self.dataframes:
+            self.dataframes[key].replace('?', float("nan"), inplace=True)
 
-MLPipelineSetup().populateDataframes()
+        return self
+
+    def printDataframes(self) -> None:
+        print(self.dataframes)
+
+
+(MLPipelineBuilder()
+    .populateDataframes()
+    .handleMissingValues()
+    .printDataframes())
