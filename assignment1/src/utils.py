@@ -9,6 +9,15 @@ class MLPipelineSetup:
             "../../datasets/house-votes/house-votes.data",
             "../../datasets/machine/machine.data"
         ]
+
+        self.dataframes = {
+            "abalone": None,
+            "breast-cancer": None,
+            "car": None,
+            "forest-fires": None,
+            "house-votes": None,
+            "machine": None
+        }
     
     def loadData(path):
         return pd.read_table(path, sep=',', header=None)
