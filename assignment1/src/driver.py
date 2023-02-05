@@ -13,4 +13,4 @@ for key in metadata:
     # printDataframes(metadata[key]["dataframe"])
     train, test = randomPartition(metadata[key])
 
-    zScore(train, test, metadata[key])
+    train, test = zScore(train, test, metadata[key])

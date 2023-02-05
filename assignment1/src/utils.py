@@ -191,9 +191,14 @@ def zScore(train: pd.DataFrame, test: pd.DataFrame, metadata):
     for index, coltype in enumerate(metadata["columnTypes"]):
         colName = metadata["columnNames"][index]
         if coltype == int or coltype == float:
-            print(f'col: {train.loc[:, colName]}')
-            mu = train.loc[:, colName].mean()
-            print(f'mu: {mu}')
+            mu = train[colName].mean()
+            sigma = train[colName].std(ddof=0)
+            train[f'{colName}_zscore'] = (train[colName] - mu) / sigma
+            test[f'{colName}_zscore'] = (test[colName] - mu) / sigma
+
+    print(f'train: {train}')
+    print(f'test: {test}')
+    return train, test
 
         
 
