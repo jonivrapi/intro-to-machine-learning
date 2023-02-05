@@ -14,6 +14,8 @@ metadata: dict[str, dict] = {
         "columns": [ColumnTypes.NOMINAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL],
         "columnTypes": [str, float, float, float, float, float, float, float, int],
         "dataframe": None,
+        "folds": None,
+        "classColumn": "Rings",
         "columnNames": ["Sex", "Length", "Diameter", "Height", "Whole weight", "Shucked weight", "Viscera weight", "Shell weight", "Rings"]
     },
     # "breast-cancer": {
@@ -65,38 +67,39 @@ metadata: dict[str, dict] = {
     #     "dataframe": None,
     #     "columnNames": ["buying", "maint", "doors", "persons", "lug_boot", "safety", "class"]
     # },
-    # "forest-fires": {
-    #     "path": "datasets/forest-fires/forest-fires.data",
-    #     "columns": [ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.ORDINAL, ColumnTypes.ORDINAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL],
-    #     "columnTypes": [int, int, str, str, float, float, float, float, float, float, float, float, float],
-    #     "ordinal": {
-    #         2: {
-    #             "jan": 0,
-    #             "feb": 1,
-    #             "mar": 2,
-    #             "apr": 3,
-    #             "may": 4,
-    #             "jun": 5,
-    #             "jul": 6,
-    #             "aug": 7,
-    #             "sep": 8,
-    #             "oct": 9,
-    #             "nov": 10,
-    #             "dec": 11
-    #         },
-    #         3: {
-    #             "mon": 0,
-    #             "tue": 1,
-    #             "wed": 2,
-    #             "thu": 3,
-    #             "fri": 4,
-    #             "sat": 5,
-    #             "sun": 6
-    #         }
-    #     },
-    #     "dataframe": None,
-    #     "columnNames": ["X", "Y", "month", "day", "FFMC", "DMC", "DC", "ISI", "temp", "RH", "wind", "rain", "area"]
-    # },
+    "forest-fires": {
+        "path": "datasets/forest-fires/forest-fires.data",
+        "columns": [ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.ORDINAL, ColumnTypes.ORDINAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL],
+        "columnTypes": [int, int, str, str, float, float, float, float, float, float, float, float, float],
+        "ordinal": {
+            2: {
+                "jan": 0,
+                "feb": 1,
+                "mar": 2,
+                "apr": 3,
+                "may": 4,
+                "jun": 5,
+                "jul": 6,
+                "aug": 7,
+                "sep": 8,
+                "oct": 9,
+                "nov": 10,
+                "dec": 11
+            },
+            3: {
+                "mon": 0,
+                "tue": 1,
+                "wed": 2,
+                "thu": 3,
+                "fri": 4,
+                "sat": 5,
+                "sun": 6
+            }
+        },
+        "dataframe": None,
+        "regressionColumn": "ISI",
+        "columnNames": ["X", "Y", "month", "day", "FFMC", "DMC", "DC", "ISI", "temp", "RH", "wind", "rain", "area"]
+    },
     # "house-votes": {
     #     "path": "datasets/house-votes/house-votes.data",
     #     "columns": [ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL],
@@ -109,22 +112,23 @@ metadata: dict[str, dict] = {
     #     "columns": [ColumnTypes.NONE, ColumnTypes.NONE, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL],
     #     "columnTypes": [str, str, int, int, int, int, int, int, int, int],
     #     "dataframe": None,
-    #     "columnNames": ["vendor name", "Model Name", "MYCT", "MMIN", "MMAX", "CACH", "CHMIN", "CHMAX", "PRP", "ERP"]
+    #     "columnNames": ["vendor name", "Model Name", "MYCT", "MMIN", "MMAX", "CACH", "CHMIN", "CHMAX", "Class - PRP", "ERP"]
     # }
 }
     
 def loadData(metadata):
+    #fix header skipping
     df = pd.read_table(metadata["path"], sep=',', header=None, skiprows=1)
     df.columns = metadata["columnNames"]
 
     return df
 
 def handleMissingValues(metadata):
+    #congressional data set is not missing values - do dummies on yes/no/? for that
     df: pd.DataFrame = metadata["dataframe"]
     df.replace('?', np.nan, inplace=True)
     for index, coltype in enumerate(metadata["columnTypes"]):
         colName = metadata["columnNames"][index]
-        # print(f'colname: {colName}')
         if coltype == int:
             df[colName] = pd.to_numeric(df[colName])
             df[colName] = df[colName].fillna(df.loc[:, colName].mean().astype(int))
@@ -141,15 +145,25 @@ def encodeOrdinalFeatures(metadata):
     return metadata["dataframe"]
 
 def encodeNominalFeatures(metadata):
-    # print(f'in metadata: {metadata["dataframe"]}')
+    colsToDrop = []
+    indicesToDrop = []
+
     for index, item in enumerate(metadata["columns"]):
         colName = metadata["columnNames"][index]
-        # print(f'index: {index}')
         if item == ColumnTypes.NOMINAL:
             oneHotEncoding = pd.get_dummies(metadata["dataframe"][colName])
-            # print(f'one hot: {oneHotEncoding}')
-            metadata["dataframe"].drop(metadata["columnNames"][index], axis=1, inplace=True)
+            colsToDrop.append(colName)
+            indicesToDrop.append(index)
+            metadata["dataframe"].drop(colName, axis=1, inplace=True)
             metadata["dataframe"] = metadata["dataframe"].join(oneHotEncoding, rsuffix=f"_{colName}")
+    
+    for colName in colsToDrop:
+        metadata["columnNames"] = [x for x in metadata["columnNames"] if x != colName]
+
+    for index in indicesToDrop:
+        metadata["columns"] = metadata["columns"][:index] + metadata["columns"][index+1:]
+        metadata["columnTypes"] = metadata["columnTypes"][:index] + metadata["columnTypes"][index+1:]
+
     
     return metadata["dataframe"]
 
@@ -158,29 +172,26 @@ def discretization(metadata, equalwidth=True, numBins=4, numQuantiles=4):
         for index, item in enumerate(metadata["columns"]):
             colName = metadata["columnNames"][index]
             if item == ColumnTypes.REAL:
-                # print(f'df: {metadata["dataframe"][colName]}')
                 metadata["dataframe"][f"{colName}_discretized"] = pd.cut(metadata["dataframe"][colName], bins=numBins)
     else:
         for index, item in enumerate(metadata["columns"]):
-            colName = metadata["columnNames"][index]
             if item == ColumnTypes.REAL:
-                # print(f'df: {metadata["dataframe"][colName]}')
+                colName = metadata["columnNames"][index]
                 metadata["dataframe"][f"{colName}_discretized"] = pd.qcut(metadata["dataframe"][colName], q=numQuantiles, duplicates='drop')
     
     return metadata["dataframe"]
 
 def zScore(train: pd.DataFrame, test: pd.DataFrame, metadata):
     for index, coltype in enumerate(metadata["columnTypes"]):
-        colName = metadata["columnNames"][index]
         if coltype == int or coltype == float:
-            zColName = f'{colName}_zscore'
+            colName = metadata["columnNames"][index]
             mu = train[colName].mean()
-            sigma = train[colName].std(ddof=0)
-            train[zColName] = (train[colName] - mu) / sigma
-            test[zColName] = (test[colName] - mu) / sigma
+            sigma = train[colName].std()
+            z_scores = (train[colName] - mu) / sigma
+            #could drop the original column
+            train = train.assign(**{f"{colName}_z_score": z_scores})
+            test = test.assign(**{f"{colName}_z_score": z_scores})
 
-    # print(f'train: {train}')
-    # print(f'test: {test}')
     return train, test   
 
 def randomPartition(metadata):
@@ -192,27 +203,133 @@ def randomPartition(metadata):
 
     test = df[~msk]
 
-    # print(f'dataframe length: {len(df)}')
-    # print(f'80%: {len(df) * 0.8} | 20%: {len(df) * 0.2}')
     # print(f'train: {train}')
     # print(f'test: {test}')
 
-    return train, test  
+    return train, test
 
-# def oneHotEncode():
-    
+def partition(metadata):
+    print(f'cols: {stratify(metadata["dataframe"], metadata["classColumn"])}')
+    return createFolds(metadata["dataframe"], numfolds=10)
 
-# def populateDataframes(self):
-#     for index, key in enumerate(self.dataframes):
-#         self.dataframes[key] = self.loadData(index)
-    
-#     return self
+
+def stratify(df, targetColumn):
+    # first randomize entire dataset
+    # split in half
+    # count instances of each class, for each one of these
+    # 
+    classCounts = df[targetColumn].value_counts()
+    classRatios = classCounts / classCounts.sum()
+    df_stratified = pd.DataFrame(columns=df.columns)
+    for target, ratio in classRatios.items():
+        target_df = df[df[targetColumn] == target]
+        #this has an issue where i could possibly pull the same rows twice, use frac=1 to return randomized total dataset
+        target_df_sampled = target_df.sample(frac=ratio, random_state=1)
+        df_stratified = pd.concat([df_stratified, target_df_sampled])
+    return df_stratified
+
+def createFolds(df, numfolds=2):
+    df = df.sample(frac=1, random_state=1).reset_index(drop=True)
+    fold_size = int(df.shape[0] / numfolds)
+    folds = []
+    for i in range(numfolds):
+        start_index = i * fold_size
+        end_index = (i + 1) * fold_size
+        fold = df.iloc[start_index:end_index]
+        folds.append(fold)
+    # print(f"folds: {folds}")
+    return folds
 
 
 
 def printDataframes(dataframe) -> None:
-    print(dataframe)
+    print(dataframe["dataframe"])
+
+def printFolds(dataframe) -> None:
+    print(dataframe["folds"])
 
 def getCurrentWorkdingDirectory() -> None:
     import os
     print("Working Directory: {}".format(os.getcwd()))
+
+
+
+#     import pandas as pd
+# import numpy as np
+
+# def stratified_k_fold(df, target_col, k):
+#     '''
+#     df : pandas dataframe
+#     target_col : str, target column
+#     k : int, number of folds
+#     '''
+#     #create a dictionary of target class and its count
+#     target_count = df[target_col].value_counts().to_dict()
+    
+#     #create a dictionary with class as key and fold number as value
+#     class_fold_dict = {}
+    
+#     #populate the dictionary
+#     for class_, count in target_count.items():
+#         #create a list of all fold number
+#         folds = list(range(k))
+#         #create a list of all indexes of the current class
+#         class_indexes = df[df[target_col] == class_].index
+#         #assign a fold number to each index
+#         fold_index = np.array_split(class_indexes, k)
+#         for i in range(k):
+#             for j in fold_index[i]:
+#                 class_fold_dict[j] = folds[i]
+    
+#     #create a column 'k_fold' in the dataframe with the assigned fold number
+#     df['k_fold'] = df.index.map(class_fold_dict)
+    
+#     return df
+
+# #example
+# df = pd.read_csv('data.csv')
+# stratified_df = stratified_k_fold(df, 'target_column', 5)
+
+def stratify_k_fold(df, column, k):
+  # Group the dataframe by the class column
+  grouped = df.groupby(column)
+  # Get the count of the classes
+  class_counts = grouped.size().reset_index(name='counts')
+  # Calculate the average number of samples per fold
+  avg_samples = int(df.shape[0]/k)
+  # Create an empty list to store the folds
+  folds = []
+  for i in range(k):
+    fold = []
+    for index, row in class_counts.iterrows():
+      class_data = grouped.get_group(row[column])
+      samples = min(avg_samples, row['counts'])
+      fold.append(class_data.sample(samples, random_state=i))
+    folds.append(pd.concat(fold, axis=0))
+  return folds
+
+def null_model_predictor_classification(df, target_column):
+    # Count the number of unique classes in the target column
+    classes = df[target_column].value_counts()
+    # Calculate the frequency of each class in the target column
+    class_frequencies = classes/df.shape[0]
+    # Create a dictionary with the class as the key and the frequency as the value
+    class_frequency_dict = class_frequencies.to_dict()
+    # Define a function that will predict the most frequent class for all samples
+    def predict(x):
+        return max(class_frequency_dict, key=class_frequency_dict.get)
+    # Apply the predict function to the target column to generate predictions
+    df['prediction'] = df.apply(predict, axis=1)
+
+    return df
+
+def null_model_predictor_regression(df, target_column):
+    # Calculate the mean of the target column
+    mean = df[target_column].mean()
+    # Define a function that will predict the mean for all samples
+    def predict(x):
+        return mean
+    # Apply the predict function to the target column to generate predictions
+    df['prediction'] = df.apply(predict, axis=1)
+    return df
+
