@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from enum import Enum
 
 class ColumnTypes(Enum):
@@ -11,18 +12,21 @@ metadata: dict[str, dict] = {
     "abalone": {
         "path": "datasets/abalone/abalone.data",
         "columns": [ColumnTypes.NOMINAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL],
+        "columnTypes": [str, float, float, float, float, float, float, float, int],
         "dataframe": None,
         "columnNames": ["Sex", "Length", "Diameter", "Height", "Whole weight", "Shucked weight", "Viscera weight", "Shell weight", "Rings"]
     },
     "breast-cancer": {
         "path": "datasets/breast-cancer/breast-cancer.data",
         "columns": [ColumnTypes.NONE, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.NOMINAL],
+        "columnTypes": [str, int, int, int, int, int, int, int, int, int, int],
         "dataframe": None,
         "columnNames": ["Sample code number", "Clump Thickness", "Uniformity of Cell Size", "Uniformity of Cell Shape", "Marginal Adhesion", "Single Epithelial Cell Size", "Bare Nuclei", "Bland Chromatin", "Normal Nucleoli", "Mitoses", "Class"]
     },
     "car": {
         "path": "datasets/car/car.data",
         "columns": [ColumnTypes.ORDINAL, ColumnTypes.ORDINAL, ColumnTypes.ORDINAL, ColumnTypes.ORDINAL, ColumnTypes.ORDINAL, ColumnTypes.ORDINAL, ColumnTypes.NOMINAL],
+        "columnTypes": [str, str, str, str, str, str, str],
         "ordinal": {
             0: {
                 "low": 0,
@@ -64,6 +68,7 @@ metadata: dict[str, dict] = {
     "forest-fires": {
         "path": "datasets/forest-fires/forest-fires.data",
         "columns": [ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.ORDINAL, ColumnTypes.ORDINAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL],
+        "columnTypes": [int, int, str, str, float, float, float, float, float, float, float, float, float],
         "ordinal": {
             2: {
                 "jan": 0,
@@ -95,12 +100,14 @@ metadata: dict[str, dict] = {
     "house-votes": {
         "path": "datasets/house-votes/house-votes.data",
         "columns": [ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL],
+        "columnTypes": [str, str, str, str, str, str, str, str, str, str, str, str, str, str, str, str, str],
         "dataframe": None,
         "columnNames": ["Class Name", "handicapped-infants", "water-project-cost-sharing", "adoption-of-the-budget-resolution", "physician-fee-freeze", "el-salvador-aid", "religious-groups-in-schools", "anti-satellite-test-ban", "aid-to-nicaraguan-contras", "mx-missile", "immigration", "synfuels-corporation-cutback", "education-spending", "superfund-right-to-sue", "crime", "duty-free-exports", "export-administration-act-south-africa"]
     },
     "machine": {
         "path": "datasets/machine/machine.data",
         "columns": [ColumnTypes.NONE, ColumnTypes.NONE, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL],
+        "columnTypes": [str, str, int, int, int, int, int, int, int, int],
         "dataframe": None,
         "columnNames": ["vendor name", "Model Name", "MYCT", "MMIN", "MMAX", "CACH", "CHMIN", "CHMAX", "PRP", "ERP"]
     }
@@ -112,9 +119,19 @@ def loadData(metadata):
 
     return df
 
-def handleMissingValues(dataframe: pd.DataFrame):
-    dataframe.replace('?', float("nan"), inplace=True)
-    return dataframe.fillna(dataframe.mean(numeric_only=True))
+def handleMissingValues(metadata):
+    df: pd.DataFrame = metadata["dataframe"]
+    df.replace('?', np.nan, inplace=True)
+    for index, coltype in enumerate(metadata["columnTypes"]):
+        colName = metadata["columnNames"][index]
+        # print(f'colname: {colName}')
+        if coltype == int:
+            df[colName] = pd.to_numeric(df[colName])
+            df[colName] = df[colName].fillna(df.loc[:, colName].mean().astype(int))
+        if coltype == float:
+            df[colName] = df[colName].fillna(df.loc[:, colName].mean().astype(float))
+
+    return df
 
 def encodeOrdinalFeatures(metadata):
     if "ordinal" in metadata:
@@ -136,13 +153,19 @@ def encodeNominalFeatures(metadata):
     
     return metadata["dataframe"]
 
-def discretization(metadata, equalwidth=True, numBins=4):
+def discretization(metadata, equalwidth=True, numBins=4, numQuantiles=4):
     if equalwidth:
         for index, item in enumerate(metadata["columns"]):
             colName = metadata["columnNames"][index]
             if item == ColumnTypes.REAL:
                 print(f'df: {metadata["dataframe"][colName]}')
-                metadata["dataframe"][f"{colName}_discretized"] = pd.cut(metadata["dataframe"][colName], numBins)
+                metadata["dataframe"][f"{colName}_discretized"] = pd.cut(metadata["dataframe"][colName], bins=numBins)
+    else:
+        for index, item in enumerate(metadata["columns"]):
+            colName = metadata["columnNames"][index]
+            if item == ColumnTypes.REAL:
+                print(f'df: {metadata["dataframe"][colName]}')
+                metadata["dataframe"][f"{colName}_discretized"] = pd.qcut(metadata["dataframe"][colName], q=numQuantiles, duplicates='drop')
     
     return metadata["dataframe"]
         
