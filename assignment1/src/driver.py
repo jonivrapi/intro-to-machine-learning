@@ -10,5 +10,7 @@ for key in metadata:
     metadata[key]["dataframe"] = encodeNominalFeatures(metadata[key])
     metadata[key]["dataframe"] = discretization(metadata[key], False)
     # metadata[key]["dataframe"].to_csv('test.csv', sep="\t", index=False)
-    printDataframes(metadata[key]["dataframe"])
+    # printDataframes(metadata[key]["dataframe"])
+    train, test = randomPartition(metadata[key])
 
+    zScore(train, test, metadata[key])
