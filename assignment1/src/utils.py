@@ -169,7 +169,19 @@ def discretization(metadata, equalwidth=True, numBins=4, numQuantiles=4):
     
     return metadata["dataframe"]
 
-# def zScoreStandardization(metadata, trainingSet: pd.DataFrame, testSet: pd.DataFrame)
+def zScore(train: pd.DataFrame, test: pd.DataFrame, metadata):
+    for index, coltype in enumerate(metadata["columnTypes"]):
+        colName = metadata["columnNames"][index]
+        if coltype == int or coltype == float:
+            zColName = f'{colName}_zscore'
+            mu = train[colName].mean()
+            sigma = train[colName].std(ddof=0)
+            train[zColName] = (train[colName] - mu) / sigma
+            test[zColName] = (test[colName] - mu) / sigma
+
+    # print(f'train: {train}')
+    # print(f'test: {test}')
+    return train, test   
 
 def randomPartition(metadata):
     df = metadata["dataframe"]
@@ -185,23 +197,7 @@ def randomPartition(metadata):
     # print(f'train: {train}')
     # print(f'test: {test}')
 
-    return train, test
-
-def zScore(train: pd.DataFrame, test: pd.DataFrame, metadata):
-    for index, coltype in enumerate(metadata["columnTypes"]):
-        colName = metadata["columnNames"][index]
-        if coltype == int or coltype == float:
-            zColName = f'{colName}_zscore'
-            mu = train[colName].mean()
-            sigma = train[colName].std(ddof=0)
-            train[zColName] = (train[colName] - mu) / sigma
-            test[zColName] = (test[colName] - mu) / sigma
-
-    # print(f'train: {train}')
-    # print(f'test: {test}')
-    return train, test
-
-        
+    return train, test  
 
 # def oneHotEncode():
     
