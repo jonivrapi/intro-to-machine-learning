@@ -15,7 +15,7 @@ metadata: dict[str, dict] = {
         "columnTypes": [str, float, float, float, float, float, float, float, int],
         "dataframe": None,
         "folds": None,
-        "classColumn": "Diameter_discretized",
+        "classColumn": "Rings",
         "columnNames": ["Sex", "Length", "Diameter", "Height", "Whole weight", "Shucked weight", "Viscera weight", "Shell weight", "Rings"]
     },
     # "breast-cancer": {
@@ -71,39 +71,39 @@ metadata: dict[str, dict] = {
     #     "classColumn": "class",
     #     "columnNames": ["buying", "maint", "doors", "persons", "lug_boot", "safety", "class"]
     # },
-    "forest-fires": {
-        "path": "datasets/forest-fires/forest-fires.data",
-        "columns": [ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.ORDINAL, ColumnTypes.ORDINAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL],
-        "columnTypes": [int, int, str, str, float, float, float, float, float, float, float, float, float],
-        "ordinal": {
-            2: {
-                "jan": 0,
-                "feb": 1,
-                "mar": 2,
-                "apr": 3,
-                "may": 4,
-                "jun": 5,
-                "jul": 6,
-                "aug": 7,
-                "sep": 8,
-                "oct": 9,
-                "nov": 10,
-                "dec": 11
-            },
-            3: {
-                "mon": 0,
-                "tue": 1,
-                "wed": 2,
-                "thu": 3,
-                "fri": 4,
-                "sat": 5,
-                "sun": 6
-            }
-        },
-        "dataframe": None,
-        "regressionColumn": "ISI",
-        "columnNames": ["X", "Y", "month", "day", "FFMC", "DMC", "DC", "ISI", "temp", "RH", "wind", "rain", "area"]
-    },
+    # "forest-fires": {
+    #     "path": "datasets/forest-fires/forest-fires.data",
+    #     "columns": [ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.ORDINAL, ColumnTypes.ORDINAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL],
+    #     "columnTypes": [int, int, str, str, float, float, float, float, float, float, float, float, float],
+    #     "ordinal": {
+    #         2: {
+    #             "jan": 0,
+    #             "feb": 1,
+    #             "mar": 2,
+    #             "apr": 3,
+    #             "may": 4,
+    #             "jun": 5,
+    #             "jul": 6,
+    #             "aug": 7,
+    #             "sep": 8,
+    #             "oct": 9,
+    #             "nov": 10,
+    #             "dec": 11
+    #         },
+    #         3: {
+    #             "mon": 0,
+    #             "tue": 1,
+    #             "wed": 2,
+    #             "thu": 3,
+    #             "fri": 4,
+    #             "sat": 5,
+    #             "sun": 6
+    #         }
+    #     },
+    #     "dataframe": None,
+    #     "regressionColumn": "ISI",
+    #     "columnNames": ["X", "Y", "month", "day", "FFMC", "DMC", "DC", "ISI", "temp", "RH", "wind", "rain", "area"]
+    # },
     # "house-votes": {
     #     "path": "datasets/house-votes/house-votes.data",
     #     "columns": [ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL],
@@ -216,38 +216,6 @@ def randomPartition(metadata):
 
     return train, test
 
-def partition(metadata):
-    print(f'cols: {stratify(metadata["dataframe"], metadata["classColumn"])}')
-    return createFolds(metadata["dataframe"], numfolds=10)
-
-
-def stratify(df, targetColumn):
-    # first randomize entire dataset
-    # split in half
-    # count instances of each class, for each one of these
-    # 
-    classCounts = df[targetColumn].value_counts()
-    classRatios = classCounts / classCounts.sum()
-    df_stratified = pd.DataFrame(columns=df.columns)
-    for target, ratio in classRatios.items():
-        target_df = df[df[targetColumn] == target]
-        #this has an issue where i could possibly pull the same rows twice, use frac=1 to return randomized total dataset
-        target_df_sampled = target_df.sample(frac=ratio, random_state=1)
-        df_stratified = pd.concat([df_stratified, target_df_sampled])
-    return df_stratified
-
-def createFolds(df, numfolds=2):
-    df = df.sample(frac=1, random_state=1).reset_index(drop=True)
-    fold_size = int(df.shape[0] / numfolds)
-    folds = []
-    for i in range(numfolds):
-        start_index = i * fold_size
-        end_index = (i + 1) * fold_size
-        fold = df.iloc[start_index:end_index]
-        folds.append(fold)
-    # print(f"folds: {folds}")
-    return folds
-
 def stratified_folds(df, target_column, n):
     # Group the dataframe by the target column
     grouped = df.groupby(target_column)
@@ -266,17 +234,13 @@ def stratified_folds(df, target_column, n):
         folds.append(pd.concat(fold, axis=0))
     return folds
 
-
-
-def printDataframes(dataframe) -> None:
-    print(dataframe["dataframe"])
-
-def printFolds(dataframe) -> None:
-    print(dataframe["folds"])
-
-def getCurrentWorkdingDirectory() -> None:
-    import os
-    print("Working Directory: {}".format(os.getcwd()))
+def stratified(df: pd.DataFrame, target_column: str, numFolds: int):
+    numRows = df[target_column].count()
+    rowsPerFold = numRows / numFolds
+    classCounts = df[target_column].value_counts()
+    test = df.groupby(target_column).sample(frac=0.6)
+    lentest = len(test)
+    return 'asd'
 
 def accuracy_score(truth, prediction):
     # print(f'truth: {truth}')
@@ -294,26 +258,6 @@ def mean_squared_error(truth, prediction):
     y_pred = pd.Series(prediction)
 
     return ((y_true - y_pred) ** 2).mean()
-
-
-
-def stratify_k_fold(df, column, k):
-  # Group the dataframe by the class column
-  grouped = df.groupby(column)
-  # Get the count of the classes
-  class_counts = grouped.size().reset_index(name='counts')
-  # Calculate the average number of samples per fold
-  avg_samples = int(df.shape[0]/k)
-  # Create an empty list to store the folds
-  folds = []
-  for i in range(k):
-    fold = []
-    for index, row in class_counts.iterrows():
-      class_data = grouped.get_group(row[column])
-      samples = min(avg_samples, row['counts'])
-      fold.append(class_data.sample(samples, random_state=i))
-    folds.append(pd.concat(fold, axis=0))
-  return folds
 
 def null_model_predictor_classification(df, target_column):
     # Count the number of unique classes in the target column
