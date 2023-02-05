@@ -23,6 +23,8 @@ metadata: dict[str, dict] = {
     #     "columns": [ColumnTypes.NONE, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.NOMINAL],
     #     "columnTypes": [str, int, int, int, int, int, int, int, int, int, int],
     #     "dataframe": None,
+    #     "folds": None,
+    #     "classColumn": "Class",
     #     "columnNames": ["Sample code number", "Clump Thickness", "Uniformity of Cell Size", "Uniformity of Cell Shape", "Marginal Adhesion", "Single Epithelial Cell Size", "Bare Nuclei", "Bland Chromatin", "Normal Nucleoli", "Mitoses", "Class"]
     # },
     # "car": {
@@ -65,46 +67,50 @@ metadata: dict[str, dict] = {
     #         }
     #     },
     #     "dataframe": None,
+    #     "folds": None,
+    #     "classColumn": "class",
     #     "columnNames": ["buying", "maint", "doors", "persons", "lug_boot", "safety", "class"]
     # },
-    "forest-fires": {
-        "path": "datasets/forest-fires/forest-fires.data",
-        "columns": [ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.ORDINAL, ColumnTypes.ORDINAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL],
-        "columnTypes": [int, int, str, str, float, float, float, float, float, float, float, float, float],
-        "ordinal": {
-            2: {
-                "jan": 0,
-                "feb": 1,
-                "mar": 2,
-                "apr": 3,
-                "may": 4,
-                "jun": 5,
-                "jul": 6,
-                "aug": 7,
-                "sep": 8,
-                "oct": 9,
-                "nov": 10,
-                "dec": 11
-            },
-            3: {
-                "mon": 0,
-                "tue": 1,
-                "wed": 2,
-                "thu": 3,
-                "fri": 4,
-                "sat": 5,
-                "sun": 6
-            }
-        },
-        "dataframe": None,
-        "regressionColumn": "ISI",
-        "columnNames": ["X", "Y", "month", "day", "FFMC", "DMC", "DC", "ISI", "temp", "RH", "wind", "rain", "area"]
-    },
+    # "forest-fires": {
+    #     "path": "datasets/forest-fires/forest-fires.data",
+    #     "columns": [ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.ORDINAL, ColumnTypes.ORDINAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL],
+    #     "columnTypes": [int, int, str, str, float, float, float, float, float, float, float, float, float],
+    #     "ordinal": {
+    #         2: {
+    #             "jan": 0,
+    #             "feb": 1,
+    #             "mar": 2,
+    #             "apr": 3,
+    #             "may": 4,
+    #             "jun": 5,
+    #             "jul": 6,
+    #             "aug": 7,
+    #             "sep": 8,
+    #             "oct": 9,
+    #             "nov": 10,
+    #             "dec": 11
+    #         },
+    #         3: {
+    #             "mon": 0,
+    #             "tue": 1,
+    #             "wed": 2,
+    #             "thu": 3,
+    #             "fri": 4,
+    #             "sat": 5,
+    #             "sun": 6
+    #         }
+    #     },
+    #     "dataframe": None,
+    #     "regressionColumn": "ISI",
+    #     "columnNames": ["X", "Y", "month", "day", "FFMC", "DMC", "DC", "ISI", "temp", "RH", "wind", "rain", "area"]
+    # },
     # "house-votes": {
     #     "path": "datasets/house-votes/house-votes.data",
     #     "columns": [ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL],
     #     "columnTypes": [str, str, str, str, str, str, str, str, str, str, str, str, str, str, str, str, str],
     #     "dataframe": None,
+    #     "folds": None,
+    #     "classColumn": "Class Name",
     #     "columnNames": ["Class Name", "handicapped-infants", "water-project-cost-sharing", "adoption-of-the-budget-resolution", "physician-fee-freeze", "el-salvador-aid", "religious-groups-in-schools", "anti-satellite-test-ban", "aid-to-nicaraguan-contras", "mx-missile", "immigration", "synfuels-corporation-cutback", "education-spending", "superfund-right-to-sue", "crime", "duty-free-exports", "export-administration-act-south-africa"]
     # },
     # "machine": {
@@ -112,7 +118,9 @@ metadata: dict[str, dict] = {
     #     "columns": [ColumnTypes.NONE, ColumnTypes.NONE, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL],
     #     "columnTypes": [str, str, int, int, int, int, int, int, int, int],
     #     "dataframe": None,
-    #     "columnNames": ["vendor name", "Model Name", "MYCT", "MMIN", "MMAX", "CACH", "CHMIN", "CHMAX", "Class - PRP", "ERP"]
+    #     "folds": None,
+    #     "classColumn": "PRP",
+    #     "columnNames": ["vendor name", "Model Name", "MYCT", "MMIN", "MMAX", "CACH", "CHMIN", "CHMAX", "PRP", "ERP"]
     # }
 }
     
@@ -154,15 +162,15 @@ def encodeNominalFeatures(metadata):
             oneHotEncoding = pd.get_dummies(metadata["dataframe"][colName])
             colsToDrop.append(colName)
             indicesToDrop.append(index)
-            metadata["dataframe"].drop(colName, axis=1, inplace=True)
+            # metadata["dataframe"].drop(colName, axis=1, inplace=True)
             metadata["dataframe"] = metadata["dataframe"].join(oneHotEncoding, rsuffix=f"_{colName}")
     
-    for colName in colsToDrop:
-        metadata["columnNames"] = [x for x in metadata["columnNames"] if x != colName]
+    # for colName in colsToDrop:
+    #     metadata["columnNames"] = [x for x in metadata["columnNames"] if x != colName]
 
-    for index in indicesToDrop:
-        metadata["columns"] = metadata["columns"][:index] + metadata["columns"][index+1:]
-        metadata["columnTypes"] = metadata["columnTypes"][:index] + metadata["columnTypes"][index+1:]
+    # for index in indicesToDrop:
+    #     metadata["columns"] = metadata["columns"][:index] + metadata["columns"][index+1:]
+    #     metadata["columnTypes"] = metadata["columnTypes"][:index] + metadata["columnTypes"][index+1:]
 
     
     return metadata["dataframe"]
@@ -238,6 +246,24 @@ def createFolds(df, numfolds=2):
         fold = df.iloc[start_index:end_index]
         folds.append(fold)
     # print(f"folds: {folds}")
+    return folds
+
+def stratified_folds(df, target_column, n):
+    # Group the dataframe by the target column
+    grouped = df.groupby(target_column)
+    # Get the count of the classes
+    class_counts = grouped.size().reset_index(name='counts')
+    # Calculate the average number of samples per fold
+    avg_samples = int(df.shape[0]/n)
+    # Create an empty list to store the folds
+    folds = []
+    for i in range(n):
+        fold = []
+        for index, row in class_counts.iterrows():
+            class_data = grouped.get_group(row[target_column])
+            samples = min(avg_samples, row['counts'])
+            fold.append(class_data.sample(samples, random_state=i))
+        folds.append(pd.concat(fold, axis=0))
     return folds
 
 

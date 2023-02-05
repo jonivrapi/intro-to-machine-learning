@@ -15,13 +15,24 @@ for key in metadata:
     train, test = zScore(train, test, metadata[key])
 
     # metadata[key]["folds"] = partition(metadata[key])
-    print(f'training set length: {len(train)}')
-    # print(f'folds: {stratify_k_fold(train, metadata[key]["classColumn"], 2)}')
+    # print(f'training set length: {len(train)}')
+    # print(f'folds: {stratified_folds(train, metadata[key]["classColumn"], 10)}')
     # print(f'prediction: {}')
-    if key == 'forest-fires':
-        null_model_predictor_regression(train, metadata[key]["regressionColumn"]).to_csv('regression.csv', sep=",", index=False)
-    else:
-        null_model_predictor_classification(train, metadata[key]["classColumn"]).to_csv('classification.csv', sep=",", index=False)
+    # if key == 'forest-fires':
+    #     null_model_predictor_regression(train, metadata[key]["regressionColumn"]).to_csv(f'{key}_regression.csv', sep=",", index=False)
+    # else:
+    #     null_model_predictor_classification(train, metadata[key]["classColumn"]).to_csv(f'{key}_classification.csv', sep=",", index=False)
 
     # printDataframes(metadata[key])
     # printFolds(metadata[key])
+
+    foldsCache = stratified_folds(train, metadata[key]["classColumn"], 10)
+
+    
+
+    for index, fold in enumerate(foldsCache):
+        folds = foldsCache
+        validation_set = folds[index]
+        folds.pop(index)
+        test_set = folds
+        
