@@ -18,21 +18,27 @@ for key in metadata:
     # print(f'training set length: {len(train)}')
     # print(f'folds: {stratified_folds(train, metadata[key]["classColumn"], 10)}')
     # print(f'prediction: {}')
-    # if key == 'forest-fires':
-    #     null_model_predictor_regression(train, metadata[key]["regressionColumn"]).to_csv(f'{key}_regression.csv', sep=",", index=False)
-    # else:
-    #     null_model_predictor_classification(train, metadata[key]["classColumn"]).to_csv(f'{key}_classification.csv', sep=",", index=False)
+    if key == 'forest-fires':
+        # null_model_predictor_regression(train, metadata[key]["regressionColumn"]).to_csv(f'{key}_regression.csv', sep=",", index=False)
+        set = null_model_predictor_regression(train, metadata[key]["regressionColumn"])
+        regressionColumn = metadata[key]["regressionColumn"]
+        print(f'MSE: {mean_squared_error(train[regressionColumn], set["prediction"])}')
+    else:
+        # null_model_predictor_classification(train, metadata[key]["classColumn"]).to_csv(f'{key}_classification.csv', sep=",", index=False)
+        set = null_model_predictor_classification(train, metadata[key]["classColumn"])
+        classColumn = metadata[key]["classColumn"]
+        print(f'Accuracy Score: {accuracy_score(train[classColumn], set["prediction"])}')
 
     # printDataframes(metadata[key])
     # printFolds(metadata[key])
 
-    foldsCache = stratified_folds(train, metadata[key]["classColumn"], 10)
+    # foldsCache = stratified_folds(train, metadata[key]["classColumn"], 10)
 
-    
 
-    for index, fold in enumerate(foldsCache):
-        folds = foldsCache
-        validation_set = folds[index]
-        folds.pop(index)
-        test_set = folds
+
+    # for index, fold in enumerate(foldsCache):
+    #     folds = foldsCache
+    #     validation_set = folds[index]
+    #     folds.pop(index)
+    #     test_set = folds
         

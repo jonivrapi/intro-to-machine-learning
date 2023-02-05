@@ -15,7 +15,7 @@ metadata: dict[str, dict] = {
         "columnTypes": [str, float, float, float, float, float, float, float, int],
         "dataframe": None,
         "folds": None,
-        "classColumn": "Rings",
+        "classColumn": "Diameter_discretized",
         "columnNames": ["Sex", "Length", "Diameter", "Height", "Whole weight", "Shucked weight", "Viscera weight", "Shell weight", "Rings"]
     },
     # "breast-cancer": {
@@ -71,39 +71,39 @@ metadata: dict[str, dict] = {
     #     "classColumn": "class",
     #     "columnNames": ["buying", "maint", "doors", "persons", "lug_boot", "safety", "class"]
     # },
-    # "forest-fires": {
-    #     "path": "datasets/forest-fires/forest-fires.data",
-    #     "columns": [ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.ORDINAL, ColumnTypes.ORDINAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL],
-    #     "columnTypes": [int, int, str, str, float, float, float, float, float, float, float, float, float],
-    #     "ordinal": {
-    #         2: {
-    #             "jan": 0,
-    #             "feb": 1,
-    #             "mar": 2,
-    #             "apr": 3,
-    #             "may": 4,
-    #             "jun": 5,
-    #             "jul": 6,
-    #             "aug": 7,
-    #             "sep": 8,
-    #             "oct": 9,
-    #             "nov": 10,
-    #             "dec": 11
-    #         },
-    #         3: {
-    #             "mon": 0,
-    #             "tue": 1,
-    #             "wed": 2,
-    #             "thu": 3,
-    #             "fri": 4,
-    #             "sat": 5,
-    #             "sun": 6
-    #         }
-    #     },
-    #     "dataframe": None,
-    #     "regressionColumn": "ISI",
-    #     "columnNames": ["X", "Y", "month", "day", "FFMC", "DMC", "DC", "ISI", "temp", "RH", "wind", "rain", "area"]
-    # },
+    "forest-fires": {
+        "path": "datasets/forest-fires/forest-fires.data",
+        "columns": [ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.ORDINAL, ColumnTypes.ORDINAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL, ColumnTypes.REAL],
+        "columnTypes": [int, int, str, str, float, float, float, float, float, float, float, float, float],
+        "ordinal": {
+            2: {
+                "jan": 0,
+                "feb": 1,
+                "mar": 2,
+                "apr": 3,
+                "may": 4,
+                "jun": 5,
+                "jul": 6,
+                "aug": 7,
+                "sep": 8,
+                "oct": 9,
+                "nov": 10,
+                "dec": 11
+            },
+            3: {
+                "mon": 0,
+                "tue": 1,
+                "wed": 2,
+                "thu": 3,
+                "fri": 4,
+                "sat": 5,
+                "sun": 6
+            }
+        },
+        "dataframe": None,
+        "regressionColumn": "ISI",
+        "columnNames": ["X", "Y", "month", "day", "FFMC", "DMC", "DC", "ISI", "temp", "RH", "wind", "rain", "area"]
+    },
     # "house-votes": {
     #     "path": "datasets/house-votes/house-votes.data",
     #     "columns": [ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL, ColumnTypes.NOMINAL],
@@ -177,13 +177,13 @@ def encodeNominalFeatures(metadata):
 
 def discretization(metadata, equalwidth=True, numBins=4, numQuantiles=4):
     if equalwidth:
-        for index, item in enumerate(metadata["columns"]):
+        for index, item in enumerate(metadata["columnTypes"]):
             colName = metadata["columnNames"][index]
-            if item == ColumnTypes.REAL:
+            if item == float:
                 metadata["dataframe"][f"{colName}_discretized"] = pd.cut(metadata["dataframe"][colName], bins=numBins)
     else:
-        for index, item in enumerate(metadata["columns"]):
-            if item == ColumnTypes.REAL:
+        for index, item in enumerate(metadata["columnTypes"]):
+            if item == float:
                 colName = metadata["columnNames"][index]
                 metadata["dataframe"][f"{colName}_discretized"] = pd.qcut(metadata["dataframe"][colName], q=numQuantiles, duplicates='drop')
     
@@ -278,43 +278,24 @@ def getCurrentWorkdingDirectory() -> None:
     import os
     print("Working Directory: {}".format(os.getcwd()))
 
+def accuracy_score(truth, prediction):
+    # print(f'truth: {truth}')
+    # print(f'prediction: {prediction}')
+    
+    y_true = pd.Series(truth)
+    y_pred = pd.Series(prediction)
+    return (y_true == y_pred).mean()
+
+def mean_squared_error(truth, prediction):
+    # print(f'truth: {truth}')
+    # print(f'prediction: {prediction}')
+    
+    y_true = pd.Series(truth)
+    y_pred = pd.Series(prediction)
+
+    return ((y_true - y_pred) ** 2).mean()
 
 
-#     import pandas as pd
-# import numpy as np
-
-# def stratified_k_fold(df, target_col, k):
-#     '''
-#     df : pandas dataframe
-#     target_col : str, target column
-#     k : int, number of folds
-#     '''
-#     #create a dictionary of target class and its count
-#     target_count = df[target_col].value_counts().to_dict()
-    
-#     #create a dictionary with class as key and fold number as value
-#     class_fold_dict = {}
-    
-#     #populate the dictionary
-#     for class_, count in target_count.items():
-#         #create a list of all fold number
-#         folds = list(range(k))
-#         #create a list of all indexes of the current class
-#         class_indexes = df[df[target_col] == class_].index
-#         #assign a fold number to each index
-#         fold_index = np.array_split(class_indexes, k)
-#         for i in range(k):
-#             for j in fold_index[i]:
-#                 class_fold_dict[j] = folds[i]
-    
-#     #create a column 'k_fold' in the dataframe with the assigned fold number
-#     df['k_fold'] = df.index.map(class_fold_dict)
-    
-#     return df
-
-# #example
-# df = pd.read_csv('data.csv')
-# stratified_df = stratified_k_fold(df, 'target_column', 5)
 
 def stratify_k_fold(df, column, k):
   # Group the dataframe by the class column
